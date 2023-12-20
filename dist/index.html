@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<style>
+		.container{
+			z-index: 2;
+			position: relative;
+			text-align: center;
+			padding-top: 50px;
+			
+		}
+		.title{
+			font-size: 34px;
+			padding-bottom: 100px;
+		}
+		.date{
+			margin-bottom: 50px;
+		}
+		/* .square{
+			z-index: 1;
+			background-color: black;
+			padding: 155px 960px;
+		} */
+		#real-time{
+			z-index: 2;
+			border-radius: 50%;
+			background-color: black;
+			color: white;
+			margin-top: 50px;
+			padding: 50px ;
+			width: 1920px;
+			height: 310px;
+		};
+	</style>
+	  <script type="text/javascript">
+		function Time() {
+		   var realTime = new Date();
+		   var hour = realTime.getHours();
+		   var minutes  = realTime.getMinutes();
+		   var seconds  = realTime.getSeconds();
+		   var text = hour + ":" + minutes + ":" + seconds;
+		   document.getElementById("real-time").innerHTML = text;
+		}
+		setInterval('Time()',1000);
+		async function startCounting() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{
+            services: [0x1234] // TOFセンサのサービスUUID
+          }]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(0x1234); // TOFセンサのサービスUUID
+
+        const characteristic = await service.getCharacteristic(0x5678); // TOFセンサのキャラクタリスティックUUID
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        // TOFセンサのデータを通知モードに設定
+        await characteristic.startNotifications();
+
+        console.log('Connected to TOF sensor');
+      } catch (error) {
+        console.error('Error connecting to TOF sensor:', error);
+      }
+    }
+
+    function handleData(event) {
+      const data = new Uint16Array(event.target.value.buffer);
+      const distance = data[0];
+
+      // 人数カウントの処理
+      if (distance > 100 && distance < 1000) {
+        updatePeopleCount();
+      }
+    }
+
+    function updatePeopleCount() {
+      const peopleCountElement = document.getElementById('peopleCount');
+      const currentCount = parseInt(peopleCountElement.innerText.replace('People Count: ', ''), 10) || 0;
+      const newCount = currentCount + 1;
+
+      peopleCountElement.innerText = `People Count: ${newCount}`;
+    }
+		  </script>
+</head>
+<body>
+	<div class="container">
+		<div class="title">学生応援メニュー完売予定時刻</div>
+		<div class="date">12月12日火曜日</div>
+		<span class="square"></span>
+		<span id="real-time"></span>
+		
+	</div>
+	
+</body>
+</html>
